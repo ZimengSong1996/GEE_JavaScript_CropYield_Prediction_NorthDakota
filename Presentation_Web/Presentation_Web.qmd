@@ -1,0 +1,1181 @@
+---
+title: CROPINVEST - Crop Yield Estimator
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .qmd
+      format_name: quarto
+      format_version: '1.0'
+      jupytext_version: 1.15.2
+  kernelspec:
+    display_name: Python 3 (ipykernel)
+    language: python
+    name: python3
+---
+
+![](Captnknure.JPG)
+
+## **Project Summary**
+CROPINVEST - Crop Yield Estimator for the State of North Dakota, USA
+
+## **Problem Statement**
+
+North Dakota, a state in the Midwestern United States, is popular with agricultural investors for its abundant agricultural resources and vast farmland. However, the agencies like – banks, crop insurance companies, etc need a tool that can predict the crop yield value of a particular farm to ensure that they can safeguard their investment.
+In this regard, we create CROPINVEST, a GEE application that monitors the environment to predict crop yields, and based on these yields, we obtain the market value of the crop, which in turn can help end users (banks, crop insurance companies ,etc) to accurately and scientifically capture the farms potential to pay the crop loan amount or the risk associated with the insured crops and enable stakeholders to make informed decisions that optimize agricultural productivity, market strategies, and economic outcomes.
+
+
+## **End User**
+
+- Insurance Companies
+    - Based on potential crop yields, charge Insurance premiums to farmers thus mitigating financial losses from decreased production. 
+    - Managing financial exposure if low yield or drought conditions prevail, which could lead to substantial claims from farmers.
+- Banks
+    - Utilize it to evaluate loan feasibility for farmers and adjust interest rates based on predicted yields and associated risks.
+- Farmer Associations
+    - Utilize it to forecast yields, plan for adverse conditions, and identify areas needing more irrigation.
+- Governments
+    - To anticipate and prepare for potential crop deficits or surpluses at a county level and thus developing policies/infrastructure for the same.
+
+## **Data**
+
+### Datasets
+
+- **A1** - *United States Census Bureau TIGER Dataset*: Boundary information for U.S. counties.
+- **A2** - *USDA NASS Cropland Data Layers*: Crop-specific Land cover data.
+- **A3** - *MOD16A2GF.061 Terra Net Evapotranspiration*: Total evapotranspiration over land.
+- **A4** - *MOD11A1.061 Terra Land Surface Temperature*: Land surface temperature data.
+- **A5** - *MOD13Q1.061 Terra Vegetation Indices 16-Day Global*: Vegetation indices.
+- **A6** - *GRIDMET: Gridded Surface Meteorological Dataset*: Meteorological data.
+- **A7** - *MCD18C2.061 Photosynthetically Active Radiation Daily 3 hour*: Solar Radiation Levels.
+- **A8** - *SPL3SMP_E.005 SMAP L3 Radiometer Global Daily 9km Soil Moisture*: Soil moisture.
+- **A9** - *Crop Yield Data*: Contains county-wise crop yield data.[USDA](https://quickstats.nass.usda.gov/)
+- **A10** - *Current Crop Price Data*: Uses current crop price data from [Financial Times](https://markets.ft.com/data/commodities)
+
+### Data Variables Overview
+
+| Data Type  | Dataset | Description                                  | Data Used        |
+|------------|---------|----------------------------------------------|------------------|
+| GEE DATA   | A1      | County wise Boundary Information             | STATEFP          |
+| GEE DATA   | A2      | Crop-specific Land Cover Data Type           | cropland         |
+| GEE DATA   | A3      | Evapo-Transpiration                          | ET               |
+| GEE DATA   | A4      | Land Surface Temperature Day                 | LST_Day_1km      |
+| GEE DATA   | A4      | Land Surface Temperature Night               | LST_Night_1km    |
+| GEE DATA   | A5      | Normalized Difference Vegetation Index       | NDVI             |
+| GEE DATA   | A6      | Precipitation                                | pr               |
+| GEE DATA   | A7      | Photosynthetically Active Radiation          | GMT_1200_PAR     |
+| GEE DATA   | A8      | Day Soil Moisture                            | soil_moisture_am |
+| GEE DATA   | A8      | Night Soil Moisture                          | soil_moisture_pm |
+| OTHER DATA | A9      | USDA Crop Yield (Year Wise)                  | Yield            |
+| OTHER DATA | A10     | Crop Day Price $ - Financial Times           | Price            |
+
+## **Methodology**
+
+We explored machine learning techniques to forecast crop yields, evaluating models like Linear Regression, Random Forest, Gradient Boosting, and Neural Networks based on their R2 and RMSE scores ,and found RF best fit for each crop. Previous studies showed that RF is an effective and universal machine-learning method for crop yield prediction on a regional and global scale with high accuracy, precision, and ease of use (Jeong et al., 2016.; Prasad et al., 2021).
+
+### Building Random Forest Model:
+
+1. Prepare original CSV file
+    - including the three crops (corn, wheat, soybean) among several X variables and Y variable (the crop yield).
+    
+    ![](images/oriCSV.png)
+    
+2. Prepare Training Data(80%) / Validation Data(20%)
+
+3. Use the Training data to train three different Random Forest Regression Models in GEE
+   
+    ![](images/YieldLegend.png)
+
+
+### Validation
+
+To get the performance of our models, we can use the test data from the previous split. We used R square and Root Mean Squared Error (RMSE) to validate our models. Some graphs showing these metrics are below: 
+
+
+<div style="position: relative; width: 100%; height: 0; padding-top: 56.2500%;
+ padding-bottom: 0; box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16); margin-top: 1.6em; margin-bottom: 0.9em; overflow: hidden;
+ border-radius: 8px; will-change: transform;">
+  <iframe loading="lazy" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; border: none; padding: 0;margin: 0;"
+    src="https:&#x2F;&#x2F;www.canva.com&#x2F;design&#x2F;DAGC-BnkFTM&#x2F;htfGBGmKgWUiwQRlwaqXgQ&#x2F;view?embed" allowfullscreen="allowfullscreen" allow="fullscreen">
+  </iframe>
+</div>
+
+
+## **Interface**
+
+CROPINVEST supports insurance companies, banks, and farmer associations with advanced features for forecasting crop yields in North Dakota for wheat, corn, and soybeans.  Users can select different Crops and Years and utilize two key functionalities: a County feature to display crop yields, planting area, total production, and county-wide crop price totals via clickable maps; and a custom Area feature allowing users to draw specific regions to analyze crop yields, areas planted, and aggregate pricing.  This interface ensures banks and insurance companies can assess financial risks effectively, while farmers gain crucial insights into expected yields and market conditions. Here is brief overview of how our application works:
+
+<div style="position: relative; width: 100%; height: 0; padding-top: 56.2500%;
+ padding-bottom: 0; box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16); margin-top: 1.6em; margin-bottom: 0.9em; overflow: hidden;
+ border-radius: 8px; will-change: transform;">
+  <iframe loading="lazy" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; border: none; padding: 0;margin: 0;"
+    src="https:&#x2F;&#x2F;www.canva.com&#x2F;design&#x2F;DAGCq_eFmq8&#x2F;Muz__V20V7SJUNr3EVBSEQ&#x2F;view?embed" allowfullscreen="allowfullscreen" allow="fullscreen">
+  </iframe>
+</div>
+
+
+## **The Application**
+
+:::{.column-page}
+
+<iframe src='https://ee-ofitrahramadhan.projects.earthengine.app/view/croinvest' width='100%' height='700px'></iframe>
+
+:::
+
+## **How it Works**
+
+### Data Extraction Code:
+- Here we use the Python environment to extract the data from different datasets using Google Earth Engine API
+- Afterwards, we first use the crop-specific land cover data to distinguish different crops- wheat, soybean or corn for each county in North Dakota.
+- Further, NDVI, Precipitation, SAR, Soil Moisture & other values are used to get the county-wise values from the year 2000-2024.
+- Afterwards, the Yield data is obtained from the [United States Department of Agriculture](https://quickstats.nass.usda.gov/) for each of the years and a final dataset is obtained which has all the X Variables (NDVI,PA,SMS_AM,LST_DAY,SMS_PM,LST_NIGHT,PAR,ET) & Y variable (YIELD).
+
+```python
+
+pip install earthengine-api
+import ee
+ee.AuthcessYear(year):
+    # Load the CDL dataset for the given year
+    dataset = ee.ImageCollection('USDA/NASS/CDL')\
+                .filter(ee.Filter.date(f'{year}-01-01', f'{year}-12-31'))\
+                .first()
+    crop_landcover = dataset.select('cropland')
+
+    # Filter for North Dakota counties
+    #`STATEFP` parameter of the dataset which provides the State FIPS code & the North Dakota value is used.
+    counties = ee.FeatureCollection('TIGER/2016/Counties')
+    nd = counties.filter(ee.Filter.eq('STATEFP', '38'))
+    
+    # Identify corn areas in North Dakota
+    #`cropland` values for different crops of our study are used Wheat, Corn & Soybean Values provided from the Cropland Table.
+    corn = crop_landcover.eq(1).Or(crop_landcover.eq(12)).Or(crop_landcover.eq(13))
+    masked_corn = crop_landcover.updateMask(corn).clipToCollection(nd)
+
+    # Calculate NDVI for corn areas using MODIS data
+    #`NDVI` parameter of the dataset and we obtain the mean over the growth period of the crop
+    NDVI_dataset = ee.ImageCollection('MODIS/061/MOD13Q1')\
+                    .filter(ee.Filter.date(f'{year}-05-01', f'{year}-10-01'))
+    ndvi = NDVI_dataset.select('NDVI')
+    mean_ndvi = ndvi.mean().rename('NDVI')
+    cornNDVI = mean_ndvi.updateMask(masked_corn)
+    
+    # Calculate precipitation using GRIDMET data
+    #`pr` parameter of the dataset which provides the 'Precipitation amount' in mm (daily total)
+    precipitation_dataset = ee.ImageCollection("IDAHO_EPSCOR/GRIDMET")\
+                             .filter(ee.Filter.date(f'{year}-05-01', f'{year}-10-01'))\
+                             .select('pr')
+    mean_precipitation = precipitation_dataset.mean().rename('PA')
+
+    # Load Radiometer Global Daily 9 km Soil Moisture AM
+    #`soil_moisture_am` & `soil_moisture_pm` parameter of the dataset which provides 'Retrieved soil moisture estimate from the
+    # disaggregated/downscaled vertical polarization brightness temperature at 9-km grid cell one at AM overpass & other at  PM overpass. in dB.
+    smap_dataset = ee.ImageCollection("NASA/SMAP/SPL3SMP_E/005")\
+                    .filter(ee.Filter.date(f'{year}-05-01', f'{year}-10-01'))\
+                    .select('soil_moisture_am')
+    mean_soil_moisture = smap_dataset.mean().rename('SMS_AM')
+    
+    # Load Radiometer Global Daily 9 km Soil Moisture PM
+    smapDataset_pm = ee.ImageCollection("NASA/SMAP/SPL3SMP_E/005")\
+                       .filter(ee.Filter.date(f'{year}-05-01', f'{year}-10-01'))\
+                       .select('soil_moisture_pm') 
+    meanSoilMoisture_pm = smapDataset_pm.mean().rename('SMS_PM')
+    
+    # Load MODIS Land Surface Temperature DAY
+    #`LST_Day_1km` & `LST_Night_1km` parameter of the dataset which provides 'Daytime Land Surface Temperature' &
+    # Nighttime Land Surface Temperature' both in Kelvin (K).
+    lstDataset = ee.ImageCollection("MODIS/061/MOD11A1")\
+                   .filter(ee.Filter.date(f'{year}-05-01', f'{year}-10-01'))
+ 
+    lstmean_celsius = lstDataset.select('LST_Day_1km')\
+                                .mean()\
+                                .multiply(0.02)\
+                                .subtract(273.15)\
+                                .rename('LST_DAY')
+    # Load MODIS Land Surface Temperature NIGHT
+    lstDataset_night = ee.ImageCollection("MODIS/061/MOD11A1")\
+                         .filter(ee.Filter.date(f'{year}-05-01', f'{year}-10-01'))
+ 
+    lstmean_celsius_night = lstDataset_night.select('LST_Night_1km')\
+                                              .mean()\
+                                              .multiply(0.02)\
+                                              .subtract(273.15)\
+                                              .rename('LST_NIGHT')
+                         
+    # Photosynthetically Active Radiation Daily 3-Hour 
+    #`GMT_1200_PAR` parameter of the dataset which provides 'Total PAR at GMT 12:00'. PAR is incident solar radiation in
+    # the visible spectrum (400-700 nanometers) and is an important variable in land-surface models having use in agriculture &
+    # other scientific applications.
+    par_12 = ee.ImageCollection("MODIS/061/MCD18C2")\
+               .filter(ee.Filter.date(f'{year}-05-01', f'{year}-10-01'))\
+               .select('GMT_1200_PAR')
+                        
+    mean_par_12 = par_12.mean().rename('PAR'); # Calculate the Photosynthetically Active Radiation at 12
+
+                         
+    # Net Evapotranspiration
+    # `ET` parameter of the dataset which provides 'Total evapotranspiration' in kg/m^2/8day.s.
+    netevapo = ee.ImageCollection("MODIS/061/MOD16A2GF")\
+                 .filter(ee.Filter.date(f'{year}-05-01', f'{year}-10-01'))\
+                 .select('ET')
+                    
+    mean_netevapo = netevapo.mean().rename('ET')  # Calculate the mean Soil Moisture
+
+
+    # Combine all layers
+    combinedDataset = cornNDVI.addBands(mean_precipitation).addBands(mean_s1_vv).addBands(mean_soil_moisture).addBands(lstmean_celsius).addBands(meanSoilMoisture_pm).addBands(lstmean_celsius_night).addBands(mean_par_12).addBands(mean_netevapo)
+
+    # Reduce regions and calculate mean values over the specified areas
+    combined_mean = combinedDataset.reduceRegions(
+        collection=nd,
+        reducer=ee.Reducer.mean(),
+        scale=30,
+        tileScale=4,
+    )
+
+    # Define export parameters
+    export_params = {
+        'collection': combined_mean,
+        'description': f'combined_{year}',
+        'folder': 'GEE_Folder',
+        'fileNamePrefix': f'Combined_{year}',
+        'fileFormat': 'CSV',
+        'selectors': ['NAME', 'GEOID', 'NDVI', 'PA', 'SAR', 'SMS_AM', 'LST_DAY', 'SMS_PM', 'LST_NIGHT', 'PAR', 'ET']
+    }
+
+    # Commented the line below as I have got the data in my drive already
+    #ee.batch.Export.table.toDrive(**export_params).start()
+
+# Example of processing each year
+for year in range(2000, 2024):
+    processYear(year)
+
+```
+
+### Methodology Code:
+
+- First, we experimented with various machine learning methods in Python, including Linear Regression (LR), Random Forest Regressor (RF), Gradient Boosting Regressor (XGB), and Artificial Neural Network (ANN). By comparing their R2 and RMSE scores, we identified the most suitable method for each of the three crops.
+- Considering the impact of environmental factors on crop growth within a specified time frame, we initially explored all nine parameters. Subsequently, based on the importance tests from the Random Forest model, five to six key variables were selected as independent variables in the predictive models for each crop.
+- In GEE, we trained Random Forest (RF) predictive models separately for three types of crops using data from six years, spanning 2018 to 2023, and split them into training/validation datasets. After obtaining the models, we assessed their performance using R2 and RMSE.
+- Using the historical average method to make a simple prediction for the crop yield of the coming year.
+
+#### Part 1
+
+```python
+#install packages
+!pip install tensorflow
+
+#load packages
+
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+
+#packages for manipulating dataframe
+import numpy as np
+import pandas as pd
+import geopandas as gpd
+from shapely.geometry import Point
+import sklearn
+
+#packages for machine learning
+##train-test-split
+from sklearn.model_selection import train_test_split, GridSearchCV, validation_curve
+
+##method 1: Linear Regression (LR)
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.model_selection import cross_val_score
+
+##method 2: Random Forest Regressor (RF)
+import rfpimp
+from sklearn.ensemble import RandomForestRegressor
+
+##method 3: Gradient Boosting Regressor (XGB)
+import xgboost
+from xgboost import XGBRegressor
+
+##method 4: Artificial Neural Network (ANN)
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+
+##cross validation
+
+##evaluation metrics (R2 and RMSE)
+from sklearn.metrics import r2_score, mean_squared_error
+
+#data visualization
+import matplotlib.pyplot as plt
+
+pd.set_option('display.max_rows', 300) # specifies number of rows to show
+pd.options.display.float_format = '{:40,.4f}'.format # specifies default number format to 4 decimal places
+plt.style.use('ggplot') # specifies that graphs should use ggplot styling
+%matplotlib inline
+
+# 1. Load & Cleaning Data
+#load data
+soybean_2018 = pd.read_csv('https://www.dropbox.com/scl/fi/ixibqk9pyuehwvoz7mr1h/2018_County_Summary_Merged.csv?rlkey=wueodqdvzsht5or4eftwdd3ys&dl=1')
+soybean_2019 = pd.read_csv('https://www.dropbox.com/scl/fi/x3oiqrikr0xagqrh5tiqu/2019_County_Summary_Merged.csv?rlkey=zr5wru8sg5iybp43lnjf7ls5a&dl=1')
+soybean_2020 = pd.read_csv('https://www.dropbox.com/scl/fi/m4r74ydgw3yno93nakagl/2020_County_Summary_Merged.csv?rlkey=kmd8bozo9z9jxznoa775gg33z&dl=1')
+soybean_2021 = pd.read_csv('https://www.dropbox.com/scl/fi/2vmvsyjloz9hvzejtdez4/2021_County_Summary_Merged.csv?rlkey=ossgr4x3fvzgebhqprchntt2f&dl=1')
+soybean_2022 = pd.read_csv('https://www.dropbox.com/scl/fi/x61224yvwtq4idnqphwjy/2022_County_Summary_Merged.csv?rlkey=s3zm9ooap8pjqom3jr0aklc6t&dl=1')
+soybean_2023 = pd.read_csv('https://www.dropbox.com/scl/fi/zrjnmeqysrokfsua24hb3/2023_County_Summary_Merged.csv?rlkey=jb4w1pt295zeagbvgm7c2t7pk&dl=1')
+
+soybean_list = [soybean_2018, soybean_2019, soybean_2020, soybean_2021, soybean_2022, soybean_2023]
+soybean_df = pd.concat(soybean_list)
+soybean_df = soybean_df.drop(['NAME','GEOID','SMS_PM','SMS_AM','SAR'], axis=1)
+soybean_df.info()
+
+# 2.1 Train & Test Data Split
+#split the dataset
+X = soybean_df.drop('YIELD', axis=1)
+y = soybean_df['YIELD']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=100)
+
+# 2.2 Train & Test Data Standarderlized
+def standardize_columns(file_name, columns_to_standardize):
+    scaler = StandardScaler()
+
+    df = file_name
+    df[columns_to_standardize] = scaler.fit_transform(df[columns_to_standardize])
+    return df
+
+def standardize_series(series):
+    scaler = StandardScaler()
+    series = scaler.fit_transform(series.values.reshape(-1, 1)).flatten()
+    return series
+    
+X_columns = ['LST_DAY','PA','NDVI','ET','LST_NIGHT','PAR']
+y_columns = ['YIELD']
+
+X_train = standardize_columns(X_train, X_columns)
+X_test = standardize_columns(X_test, X_columns)
+
+# 3. Model Training and Parameter Tuning
+# 3.1. Linear Regression (LR)
+model_lr = LinearRegression()
+
+# Cross validation
+scores = cross_val_score(model_lr, X, y, cv=5, scoring='neg_mean_squared_error')
+
+mean_mse = np.mean(scores)
+std_mse = np.std(scores)
+
+print(f'Mean MSE: {mean_mse}')
+print(f'Standard Deviation of MSE: {std_mse}')
+model_lr.fit(X_train, y_train)
+
+# 3.2. Random Forest Regressor (RF)
+# values of max_depth and min_samples_split
+hyperparameters = {'max_depth':[3,5,10,20,30], 'min_samples_split':[2,4,6,8,10]}
+
+
+randomState_dt = 10000
+model_rf = RandomForestRegressor(random_state=randomState_dt)
+
+# cv=5 by default, which means 5-fold cross-validation
+clf = GridSearchCV(model_rf, hyperparameters)
+
+clf.fit(X_train, y_train)
+
+# we can query the best parameter value and its accuracy score
+print ("The best parameter value is: ")
+print (clf.best_params_)
+print ("The best score is: ")
+print (clf.best_score_)
+
+# Train the final RF
+rf_final = RandomForestRegressor(max_depth=clf.best_params_['max_depth'], min_samples_split=clf.best_params_['min_samples_split'], random_state=randomState_dt)
+rf_final.fit(X_train, y_train)
+
+# 3.3. Gradient Boosting Regressor (XGB)
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+# values of max_depth and min_samples_split
+hyperparameters = {'max_depth':[2,4,6,8,10], 'n_estimators':[4,8,12,16,20]}
+
+randomState_xgb = 125
+xgb = XGBRegressor(random_state=randomState_xgb)
+
+# cv=5 by default, which means 5-fold cross-validation
+gscv_xgb = GridSearchCV(xgb, hyperparameters)
+
+gscv_xgb.fit(X_train, y_train)
+
+# we can query the best parameter value and its accuracy score
+print ("The best parameter value is: ")
+print (gscv_xgb.best_params_)
+print ("The best score is: ")
+print (gscv_xgb.best_score_)
+
+# 3.4. Artificial Neural Network (ANN)
+model_ann = keras.Sequential([
+    layers.Input(shape=(6,)),  # Input layer
+    layers.Dense(128, activation='relu'),  # Hidden layer with ReLU activation
+    layers.Dropout(0.5),  # Dropout layer for regularization
+    layers.Dense(64, activation='relu'),  # Additional hidden layer
+    layers.Dropout(0.3),  # Another dropout layer
+    layers.Dense(1)  # Output layer
+])
+
+#measuring the training with certain metrics
+model_ann.compile(optimizer='adam', loss='mean_squared_error', metrics=['accuracy'])
+
+#train the model
+model_ann.fit(X_train, y_train, epochs=100, validation_data=(X_test, y_test))
+
+# 4. Model Evaluation and Performance Comparison
+# 4.1. E. Linear Regression (LR)
+train_predictions = model_lr.predict(X_train)
+test_predictions = model_lr.predict(X_test)
+
+r2_train_lr = r2_score(y_train, train_predictions)
+r2_test_lr = r2_score(y_test, test_predictions)
+
+rmse_train_lr = mean_squared_error(y_train, train_predictions, squared=False)
+rmse_test_lr = mean_squared_error(y_test, test_predictions, squared=False)
+
+print(f"Training R^2: {r2_train_lr:.4f}")
+print(f"Test R^2: {r2_test_lr:.4f}")
+print(f"Training RMSE: {rmse_train_lr:.4f}")
+print(f"Test RMSE: {rmse_test_lr:.4f}")
+
+# 4.2. E. Random Forest Regressor (RF)
+r2_train_rf = rf_final.score(X=X_train, y=y_train)
+r2_test_rf = rf_final.score(X=X_test, y=y_test)
+
+print("R2 on the training data:")
+print(r2_train_rf)
+print("R2 on the testing data:")
+print(r2_test_rf)
+
+rmse_train_rf = mean_squared_error(y_train, rf_final.predict(X_train), squared=False)
+rmse_test_rf = mean_squared_error(y_test, rf_final.predict(X_test), squared=False)
+
+print("RMSE on the training data:")
+print(rmse_train_rf)
+print("RMSE on the testing data:")
+print(rmse_test_rf)
+
+# Calculate and plot the feature importance of the RF model
+imp = rfpimp.importances(rf_final, X_test, y_test)
+print(imp)
+viz = rfpimp.plot_importances(imp)
+viz.view()
+
+# 4.3. E. Gradient Boosting Regressor (XGB)
+model_xgb = XGBRegressor(max_depth=gscv_xgb.best_params_['max_depth'], n_estimators=gscv_xgb.best_params_['n_estimators'], random_state=randomState_xgb)
+model_xgb.fit(X_train, y_train)
+
+# r2_train_xgb, r2_test_xgb, rmse_train_xgb, rmse_test_xgb
+r2_train_xgb = model_xgb.score(X=X_train, y=y_train)
+r2_test_xgb = model_xgb.score(X=X_test, y=y_test)
+rmse_train_xgb = mean_squared_error(y_train, model_xgb.predict(X_train), squared=False)
+rmse_test_xgb = mean_squared_error(y_test, model_xgb.predict(X_test), squared=False)
+
+print("R2 on the training data:")
+print(r2_train_xgb)
+print("R2 on the testing data:")
+print(r2_test_xgb)
+
+print("RMSE on the training data:")
+print(rmse_train_xgb)
+print("RMSE on the testing data:")
+print(rmse_test_xgb)
+
+imp_xgb = rfpimp.importances(model_xgb, X_test, y_test) # permutation
+print(imp_xgb)
+viz_xgb = rfpimp.plot_importances(imp_xgb)
+viz_xgb.view()
+
+# 4.4. E. Artificial Neural Network (ANN)
+#predictions
+y_pred_train_ann = model_ann.predict(X_train).flatten()
+y_pred_test_ann = model_ann.predict(X_test).flatten()
+
+#Compute R2 and RMSE
+r2_train_ann = np.round(r2_score(y_train, y_pred_train_ann),2)
+r2_test_ann = np.round(r2_score(y_test, y_pred_test_ann),2)
+rmse_train_ann = np.round(np.sqrt(mean_squared_error(y_train, y_pred_train_ann)),2)
+rmse_test_ann = np.round(np.sqrt(mean_squared_error(y_test, y_pred_test_ann)),2)
+
+#print the result
+print("Train R2:", r2_train_ann)
+print("Test R2:", r2_test_ann)
+print("Train RMSE:", rmse_train_ann)
+print("Test RMSE:", rmse_test_ann)
+
+#crosscheck the y value between real and predicted
+crosscheck_y_dict = {
+    'y_test' : y_test,
+    'y_pred' : np.round(y_pred_test_ann,0),
+    'delta' : np.abs(np.round((y_test - y_pred_test_ann),0))
+}
+
+#plotting histogram
+crosscheck_y_df = pd.DataFrame(crosscheck_y_dict)
+plt.hist(crosscheck_y_df['delta'], bins=10)
+plt.xlabel(f'Delta\nR2_test = {r2_test_ann}, RMSE_test = {rmse_test_ann}, delta_max = {crosscheck_y_df.delta.max()}')
+plt.ylabel('Frequency (Number of Data)')
+plt.title(f"Accuracy of ANN Model Based on Delta of Y Test and Y Pred)")
+plt.show()
+
+# 4.5. Model Performance Comparison
+#please input your metrics in here
+metrics_dict = {
+    'metrics': ["Train R2","Test R2","Train RMSE","Test RMSE"],
+    'LR': [r2_train_lr, r2_test_lr, rmse_train_lr, rmse_test_lr],
+    'RF': [r2_train_rf, r2_test_rf, rmse_train_rf, rmse_test_rf],
+    'XGB': [r2_train_xgb, r2_test_xgb, rmse_train_xgb, rmse_test_xgb],
+    'ANN': [r2_train_ann, r2_test_ann, rmse_train_ann, rmse_test_ann]
+}
+
+#create dataframe
+metrics_df = pd.DataFrame(metrics_dict)
+metrics_df.set_index('metrics')
+```
+
+#### Part 2
+
+```js
+
+//  ========================== GEE  ========================================
+// Import CSV data  
+// Load data from CSV file
+var csvFile = ee.FeatureCollection('projects/ee-ucfnfli/assets/corn_df');
+
+// ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9', 'B10', 'B11', 'BQA']
+var bands = ['NDVI', 'LST_DAY', 'ET', 'PAR', 'PA'];
+
+
+//  ========================== train the RF classification model  ========================================
+// Split the training and testing data
+var withRandom = csvFile.randomColumn({
+  columnName:'random',
+  seed:2,
+  distribution: 'uniform',
+});
+
+
+var split = 0.8; 
+var trainingData = withRandom.filter(ee.Filter.lt('random', split));
+var validationData = withRandom.filter(ee.Filter.gte('random', split));
+
+
+// var classifier = ee.Classifier.smileRandomForest(100, null, 8, 0.5, null, 125)
+var classifier = ee.Classifier.smileRandomForest(100, null, 1, 0.7, null, 0).setOutputMode('REGRESSION')
+    .train({
+      features: trainingData, 
+      classProperty: 'YIELD', 
+      inputProperties: bands
+    });
+//print(classifier);
+
+// =================================== img  ======================
+
+var featureTest = trainingData.select(['NDVI', 'LST_DAY', 'ET', 'PAR', 'PA','YIELD']);
+
+var classifiedFeatures = featureTest.classify(classifier,'YIELDPredicted');
+
+
+// ============================ Validation  =================================
+// ============================ variable importance  =================================
+var dict = classifier.explain();
+print("Classifier information:", dict);
+var variableImportance = ee.Feature(null, ee.Dictionary(dict)
+  .get('importance'));
+// Make chart, print it
+var chart =
+  ui.Chart.feature.byProperty(variableImportance)
+  .setChartType('ColumnChart')
+  .setOptions({
+    title: 'Random Forest Variable Importance',
+    legend: {
+      position: 'none'
+    },
+    hAxis: {
+      title: 'Bands'
+    },
+    vAxis: {
+      title: 'Importance'
+    }
+  });
+print(chart);
+
+// ===================================  Compute RSME R2 =====================
+// Separate the observed (REDOX_CM) and predicted (regression) properties
+// var sampleTraining = predictedTraining.select(['Yield', 'predicted']);
+// Create chart, print it
+var chartTraining = ui.Chart.feature.byFeature({features:classifiedFeatures, xProperty:'YIELD', yProperties:['YIELDPredicted']})
+  .setChartType('ScatterChart')
+  .setOptions({
+    title: 'Predicted vs Observed - Training data ',
+    hAxis: {
+      'title': 'observed'
+    },
+    vAxis: {
+      'title': 'predicted'
+    },
+    pointSize: 3,
+    trendlines: {
+      0: {
+        showR2: true,
+        visibleInLegend: true
+      },
+      1: {
+        showR2: true,
+        visibleInLegend: true
+      }
+    }
+  });
+print(chartTraining);
+// Training data
+// R2 = 0.964;  RMSE = 6.601 in python
+// R2 = 0.948;  RMSE = 8.396 in GEE
+
+// Compute RSME
+// Get array of observation and prediction values 
+var observationTraining = ee.Array(classifiedFeatures.aggregate_array('YIELD'));
+var predictionTraining = ee.Array(classifiedFeatures.aggregate_array('YIELDPredicted'));
+//print('observationTraining', observationTraining)
+//print('predictionTraining', predictionTraining)
+
+// Compute residuals
+var residualsTraining = observationTraining.subtract(predictionTraining);
+//print('residualsTraining', residualsTraining)
+// Compute RMSE with equation, print it
+var rmseTraining = residualsTraining.pow(2)
+  .reduce('mean', [0])
+  .sqrt();
+print('Training RMSE', rmseTraining); 
+
+
+// =============================== Validation =================================
+
+var featureValidation = validationData.select(['NDVI', 'LST_DAY', 'ET', 'PAR', 'PA','YIELD']);
+//  Validation data 
+var classifiedValidation = featureValidation.classify(classifier,'YIELDPredicted');
+// print result
+//print('ValidRegressionResult:', classifiedValidation);
+
+var sampleValidation = classifiedValidation.select(['YIELD', 'YIELDPredicted']);
+// Create chart, print it
+var chartValidation = ui.Chart.feature.byFeature(sampleValidation, 'YIELD', 'YIELDPredicted')
+  .setChartType('ScatterChart')
+  .setOptions({
+    title: 'Predicted vs Observed - Validation data',
+    hAxis: {
+      'title': 'predicted'
+    },
+    vAxis: {
+      'title': 'observed'
+    },
+    pointSize: 3,
+    trendlines: {
+      0: {
+        showR2: true,
+        visibleInLegend: true
+      },
+      1: {
+        showR2: true,
+        visibleInLegend: true
+      }
+    }
+  });
+print(chartValidation);
+
+// Get array of observation and prediction values 
+var observationValidation = ee.Array(sampleValidation.aggregate_array('YIELD'));
+var predictionValidation = ee.Array(sampleValidation.aggregate_array('YIELDPredicted'));
+// Compute residuals
+var residualsValidation = observationValidation.subtract(predictionValidation);
+// Compute RMSE with equation, print it
+var rmseValidation = residualsValidation.pow(2)
+  .reduce('mean', [0])
+  .sqrt();
+print('Validation RMSE', rmseValidation);
+// Testing data
+// R2 = 0.812;  RMSE = 15.166 in python
+// R2 = 0.841;  RMSE = 12.990 in GEE
+// ============================== merge raster data ============================
+// Merge 
+var yield2021 = processYear(2021);
+var yield2022 = processYear(2022);
+var yield2023 = processYear(2023);
+// Concatenate two images into one multi-band image.
+var mergeYield = ee.Image.cat([yield2021, yield2022, yield2023]);
+print('mergeImg:', mergeYield);
+
+// Obtain the union of all images in the image collection and sum them
+// sum all three years yields
+var summedImage = mergeYield.reduce(ee.Reducer.sum());
+print(summedImage)
+
+// Print the results
+print('sumImg:', summemage);
+// Map.addLayer(summedImage,{}, 'TotalYield2024');
+
+var yield2024 = summedImage.divide(3);
+print('yield2024:', yield2024);
+Map.addLayer(yield2024,{}, 'yield2024');
+
+
+
+```
+
+
+### Interface Code:
+
+- In this section, we perform calculations on the crop layers obtained from the random forest prediction model to generate various outputs. By defining global variables, we dynamically update the crop layers based on the user's selected year and crop type. The core functionality lies in the computation logic for the County level and Area level modes.
+- In the County level mode, a click event listener is created to provide real-time feedback on the user-selected county. The number of pixels within the county is calculated, enabling the estimation of the crop area. Utilizing historical and predicted average yield data and the current year's average market price, the total production and total value are computed.
+- In the Area level mode extends the calculation scope to a user-defined polygon region, with a similar computation method to the County level mode. The "Clear Selected Area Button" allows users to remove unnecessary polygons in the Area level mode, enhancing usability.
+- The Interface Code is as follows :
+
+```js
+
+// ——————————————————————————define crop layers————————————————————————————————
+
+var cropLayers = {
+  Corn: {
+    // Add layers of corn
+    '2018': ee.Image("projects/ee-songzimeng/assets/corn2018"),
+    '2019': ee.Image("projects/ee-songzimeng/assets/corn2019"),
+    '2020': ee.Image("projects/ee-songzimeng/assets/corn2020"),
+    '2021': ee.Image("projects/ee-songzimeng/assets/corn2021"),
+    '2022': ee.Image("projects/ee-songzimeng/assets/corn2022"),
+    '2023': ee.Image("projects/ee-songzimeng/assets/corn2023"),
+    '2024': ee.Image("projects/ee-songzimeng/assets/corn2024")
+    
+  },
+  
+  Soybean: {
+    // Add layers of soybean
+
+    '2018': ee.Image("projects/ee-songzimeng/assets/soybean2018"),
+    '2019': ee.Image("projects/ee-songzimeng/assets/soybean2019"),
+    '2020': ee.Image("projects/ee-songzimeng/assets/soybean2020"),
+    '2021': ee.Image("projects/ee-songzimeng/assets/soybean2021"),
+    '2022': ee.Image("projects/ee-songzimeng/assets/soybean2022"),
+    '2023': ee.Image("projects/ee-songzimeng/assets/soybean2023"),
+    '2024': ee.Image("projects/ee-songzimeng/assets/soybean2024")
+  },
+  
+  Wheat: {
+    // Add layers of wheat
+
+    '2018': ee.Image("projects/ee-songzimeng/assets/wheat2018"),
+    '2019': ee.Image("projects/ee-songzimeng/assets/wheat2019"),
+    '2020': ee.Image("projects/ee-songzimeng/assets/wheat2020"),
+    '2021': ee.Image("projects/ee-songzimeng/assets/wheat2021"),
+    '2022': ee.Image("projects/ee-songzimeng/assets/wheat2022"),
+    '2023': ee.Image("projects/ee-songzimeng/assets/wheat2023"),
+    '2024': ee.Image("projects/ee-songzimeng/assets/wheat2024")
+  }
+};
+
+// -------------------------- Data  ------------------------------
+Map.setCenter(-100.55, 47.5, 7);
+Map.setOptions('SATELLITE');
+
+// clip the north dakota
+var counties = ee.FeatureCollection('TIGER/2016/Counties');
+var nd = counties.filter(ee.Filter.eq('STATEFP', '38'));
+
+// Formatted county name function
+var nd = nd.map(function(feature) {
+  var name = ee.String(feature.get('NAME')).toUpperCase().replace(' ', '', 'g');
+  return feature.set('NAME', name);
+});
+
+// Show the county boundary
+var ndCounties = ee.Image().byte().paint({
+  featureCollection: nd,
+  color: null, 
+  width: 1
+});
+
+// Add the counties layer
+Map.addLayer(ndCounties, {}, 'ND Counties');
+
+/// ——————————————Function and global variables——————————————————————————
+// Function to read csv
+function readCsvFile(selectedYear, selectedCrop) {
+  var fileName = selectedYear +'_'+ selectedCrop;
+  var csvFile = ee.FeatureCollection('projects/ee-songzimeng/assets/' + fileName); 
+
+  return csvFile;
+}
+
+// Function to fomat county name
+function processCountyColumn(table) {
+  var countyColumnName = 'County';
+  function processCountyName(countyName) {
+    return ee.String(countyName).toUpperCase().replace('\\s+', '');
+  }
+  
+  var processedCountyColumn = table.map(function(feature) {
+    var countyName = feature.get(countyColumnName);
+    var processedCountyName = processCountyName(countyName);
+    return feature.set(countyColumnName, processedCountyName);
+  });
+  
+  // return FeatureCollection
+  return processedCountyColumn;
+}
+
+var selectedCrop='Select...';
+var selectedYear='Select...';
+var soybeanPrice = 11.90; // 2024 average
+var CornPrice = 41.68; // 2024 average
+var wheatPrice = 6.07; // 2024 average
+var cropPrice = 0; //
+
+var crops = {
+  'Corn': 1,
+  'Wheat': 23,
+  'Soybean': 5
+};
+
+
+// ————————————————interface——————————————————————————
+// set default year
+var defaultYear = '2018';
+
+var cropYieldLayer = null;
+
+var statsLabel_1 = ui.Label('Click on County to see info:');
+var statsLabel_2 = ui.Label('Select an area to see info:');
+
+// set original info status
+statsLabel_1.style().set('shown', true);
+statsLabel_2.style().set('shown', false);
+
+// Clear button to remove all selected layers
+var drawingTools = Map.drawingTools();
+var clearButton = ui.Button({
+  label: 'Clear Selected Area',
+  onClick: function() {
+
+    var layers = drawingTools.layers();
+
+    layers.forEach(function(layer) {
+      drawingTools.layers().remove(layer);
+    });
+
+    resultsPanel.clear();
+  },
+  style: {margin: '10px'}
+});
+
+
+// the main panel to select mode, year, croptype
+var panel = ui.Panel({
+  widgets: [
+    
+    ui.Label('North Dakota Crop Yield', {
+      fontWeight: 'bold',
+      fontSize: '22px',
+      textAlign: 'center',
+      stretch: 'horizontal'
+      
+    }),
+    
+    ui.Label('Select Mode:'),
+    ui.Select({
+      items: ['Select...','County Level', 'Area Level'],
+      value: 'Select...',
+      onChange: function(mode) {
+        
+        // operate different 
+        if (mode === 'County Level') {
+          // County Level
+          statsLabel_1.style().set('shown', true);
+          statsLabel_2.style().set('shown', false);
+          
+          // reset button
+          panel.remove(clearButton);
+          panel.add(clearButton);
+          
+          // ban polygon drawing selection
+          var drawingTools = Map.drawingTools();
+          drawingTools.setShown(false);
+          
+          //Function for getting value from image
+          var getCalculation = function(countyName, cropYieldLayer) {
+            var county = nd.filter(ee.Filter.eq('NAME', countyName)).first();
+            var countyGeometry = county.geometry();
+            
+             //print(selectedYear, selectedCrop);
+            var countyData=readCsvFile(selectedYear, selectedCrop);
+            // print(countyData);
+            countyData = processCountyColumn(countyData);
+            
+            resultsPanel.clear();
+          
+            var countStats = cropYieldLayer.reduceRegion({
+              reducer: ee.Reducer.count(),
+              geometry: countyGeometry,
+              scale: 30,
+              maxPixels: 1e9
+            });
+           //print(countStats);
+          
+            var selectedCounty = countyData.filter(ee.Filter.eq('County', countyName));
+            var averYield = selectedCounty.reduceColumns({
+            reducer: ee.Reducer.mean(),
+            selectors: ['Value']
+          });
+            //print(averYield);
+          
+            // create labels
+            var countyLabel = ui.Label({
+              value: 'County: ' + countyName,
+              style: {fontSize: '13px', padding: '0px 50px'}
+            });
+          
+            var count_sumLabel = ui.Label({
+              value: 'Calculating...',
+              style: {fontSize: '13px', padding: '0px 50px'}
+            });
+          
+          // update labels by calculating
+          // get the mean yield data
+            averYield.evaluate(function(result) {
+              var meanYield = result.mean;
+              var count_averYieldLabel = ui.Label({
+                value: 'Average Yield: ' + meanYield.toFixed(2) + ' BU/Acre', 
+                style: {fontSize: '13px', padding: '0px 50px'}
+              });
+                resultsPanel.add(count_averYieldLabel);
+          });
+          
+            // calculate the area and total yield
+            countStats.get('YIELDpredicted').evaluate(function(value){
+
+              var areaInSqKm = (value / 1e6) * 900;
+              var areaInAcres = areaInSqKm * 247.105;
+              count_sumLabel.setValue('Crop Area: ' + areaInSqKm.toFixed(2) + 
+                                      ' km² (' + areaInAcres.toFixed(2) + ' Acres)');
+                                      
+              averYield.evaluate(function(result) {
+                var meanYield = result.mean;
+                var totalYield = areaInAcres * meanYield;
+                var count_totalYieldLabel = ui.Label({
+                  value: 'Total Yield: ' + totalYield.toFixed(2) + ' BU', 
+                  style: {fontSize: '13px', padding: '0px 50px'}
+                });
+                var yieldPrice = totalYield * cropPrice;
+                var yieldPriceLabel = ui.Label({
+                  value: 'Total Yield Value: ' + yieldPrice.toFixed(2) + ' $', 
+                  style: {fontSize: '13px', padding: '0px 50px'}
+                });
+                resultsPanel.add(count_totalYieldLabel);
+                resultsPanel.add(yieldPriceLabel);
+          });
+            });
+          
+            // add the new label to sub-panel
+            resultsPanel.add(countyLabel);
+            resultsPanel.add(count_sumLabel);
+          };
+          
+          Map.unlisten()
+          
+            // create onclick function
+          Map.onClick(function(coords) {
+            
+          var point = ee.Geometry.Point(coords.lon, coords.lat);
+          var county = ee.Feature(nd.filterBounds(point).first());
+          var countyName = county.get('NAME');
+          countyName.evaluate(function(name) {
+            getCalculation(name, cropYieldLayer);
+          });
+          })
+          
+
+          // Area level
+        } else if (mode === 'Area Level') {
+
+          statsLabel_1.style().set('shown', false);
+          statsLabel_2.style().set('shown', true);
+          
+          // delet onclick monitor
+          Map.unlisten()
+          
+          //reset button
+          panel.remove(clearButton);
+          panel.add(clearButton);
+          
+          // draw polygon
+          var drawingTools = Map.drawingTools();
+          drawingTools.setShown(true);
+    
+    
+          // function under area level
+          function initializeAreaLevelMode() {
+            // create a new drawing tools
+            var drawingTools = Map.drawingTools();
+            drawingTools.setShown(true);
+            
+            drawingTools.onDraw(function(geometry) {
+              // get the polygon user drawing
+              var userPolygon = geometry;
+              
+              // calculate pixels number inside the polygon user draw
+              var pixelCount = cropYieldLayer.reduceRegion({
+                reducer: ee.Reducer.count(),
+                geometry: userPolygon,
+                scale: 30,
+                maxPixels: 1e9
+              });
+              
+              //calculate average yield user draw
+             var meanStats = cropYieldLayer.reduceRegion({
+              reducer: ee.Reducer.mean(),
+              geometry: userPolygon,
+              scale: 30,
+              maxPixels: 1e9
+            });
+              // print(meanStats)
+
+                // combined 2 results
+              var results = ee.Dictionary({
+                  meanYield: meanStats.get('YIELDpredicted'),
+                  pixelCount: pixelCount.get('YIELDpredicted')
+              });
+
+              // calculate average yield, crop area, total yield, and update labels
+              results.evaluate(function(values)  {
+                resultsPanel.clear();
+                
+              var area_sumLabel = ui.Label({
+                value: 'Calculating...',
+                style: {fontSize: '14px', padding: '0px 50px'}
+              });
+              
+              var meanYield_sumLabel = ui.Label({
+                value: 'Calculating...',
+                style:{fontSize: '14px', padding: '0px 50px'}
+              });
+              
+              var count_totalYieldLabel = ui.Label({
+                value: 'Calculating...',
+                style:{fontSize: '14px', padding: '0px 50px'}
+              });
+          
+              resultsPanel.add(area_sumLabel);
+              resultsPanel.add(meanYield_sumLabel);
+              resultsPanel.add(count_totalYieldLabel);
+          
+              meanYield_sumLabel.setValue('Average Yield: ' + values.meanYield.toFixed(2) + ' BU/Acre');
+          
+              var areaInSqKm = (values.pixelCount / 1e6) * 900;
+              var areaInAcres = areaInSqKm * 247.105;
+              area_sumLabel.setValue('Crop Area: ' + areaInSqKm.toFixed(2) + 
+                                      ' km² (' + areaInAcres.toFixed(2) + ' Acres)');
+                                      
+              var totalYield = areaInAcres * values.meanYield;
+              count_totalYieldLabel.setValue('Total Yield: ' + totalYield.toFixed(2) + ' BU'); 
+               
+              var yieldPrice = totalYield * cropPrice;
+              var yieldPriceLabel = ui.Label({
+                  value: 'Total Yield Value: ' + yieldPrice.toFixed(2) + ' $', 
+                  style: {fontSize: '13px', padding: '0px 50px'}
+                });
+              resultsPanel.add(yieldPriceLabel);
+                
+                });
+                
+            });
+
+          }
+          initializeAreaLevelMode();
+          
+        }
+        
+      }
+    }),
+    
+    ui.Label('Select Year:'),
+    ui.Select({
+      items: ['Select...', '2018', '2019', '2020', 
+                 '2021', '2022', '2023', '2024'],
+      value: 'Select...',
+      onChange: function(year) {
+        
+        // update global variable selectedYear, the year user chose
+        selectedYear = year;
+        updateMap();
+
+      }
+    }),
+    
+    ui.Label('Select Crop:'),
+    ui.Select({
+      items: ['Select...', 'Soybean', 'Corn', 'Wheat'],
+      value: 'Select...',
+      onChange: function(crop) {
+        
+        selectedCrop = crop;
+        
+        // set cropPrice according to selected 
+        if (selectedCrop === 'Soybean') {
+          cropPrice = 11.90; 
+        } else if (selectedCrop === 'Wheat') {
+          cropPrice = 6.07; 
+        } else if (selectedCrop === 'Corn') {
+          cropPrice = 5.80; 
+        } else {
+          cropPrice = 0;
+        }
+        
+        updateMap();
+        
+      }
+    }),
+    
+    statsLabel_1,
+    statsLabel_2
+  ],
+  style: {position: 'top-right'}
+});
+
+Map.add(panel);
+
+// Add a sub-panel to show calculation info
+var resultsPanel = ui.Panel({
+  layout: ui.Panel.Layout.Flow('vertical'),
+  style: {width: '310px'} 
+});
+panel.add(resultsPanel);
+
+// update new layers accoording to user's selection
+function updateMap() {
+
+  // // Remove particular layers
+  // Map.layers().forEach(function(layer) {
+  //   var layerName = layer.getName();
+  //   if (layerName.indexOf('YIELD_') === 0) {
+  //     Map.remove(layer);
+  //   }
+  // });
+  
+  Map.layers().reset();
+
+  // Show layers if user choose both selections
+  if (selectedYear !== 'Select...' && selectedCrop !== 'Select...') {
+    
+      cropYieldLayer = cropLayers[selectedCrop][selectedYear];
+
+    if (cropYieldLayer) {
+      var layerName = selectedCrop + '_' + selectedYear;
+      Map.addLayer(cropYieldLayer, {}, 'YIELD_' + layerName);
+    }
+
+  }
+  
+  // add the counties layer
+  Map.addLayer(ndCounties, {}, 'ND Counties');
+  
+}
+
+```

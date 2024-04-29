@@ -1,0 +1,86 @@
+---
+title: "data collection code"
+format: html
+editor: visual
+---
+
+```{var dataset = ee.ImageCollection('USDA/NASS/CDL')}
+                  .filter(ee.Filter.date('2017-01-01', '2017-12-31'))
+                  .first();
+var cropLandcover = dataset.select('cropland');
+Map.setCenter(-100.55, 47.5, 7);
+
+// clip the north dakota
+var counties = ee.FeatureCollection('TIGER/2016/Counties');
+var nd = counties.filter(ee.Filter.eq('STATEFP', '38'));
+var ndCropLandcover = cropLandcover.clipToCollection(nd);
+Map.addLayer(ndCropLandcover, {}, 'Crop Landcover ND');
+
+//clip the soybean area
+var soybeans = cropLandcover.eq(5);
+var maskedSoybeans = cropLandcover.updateMask(soybeans).clipToCollection(nd);
+Map.addLayer(maskedSoybeans, {palette: ['#267000']}, 'Soybean');
+
+// Show the soybean area and county boundary
+var ndCounties = ee.Image().byte().paint({
+  featureCollection: nd,
+  color: null, 
+  width: 1
+});
+
+// add the counties layer
+Map.addLayer(ndCounties, {}, 'ND Counties');
+
+// // export the crop area data of each county
+// var cropSummaryByCounty = ndCropLandcover.reduceRegions({
+//   collection: nd,
+//   reducer: ee.Reducer.frequencyHistogram(), 
+//   scale: 19,
+// });
+
+// print(cropSummaryByCounty);
+// // 定义导出的参数
+// var exportParams = {
+//   collection: cropSummaryByCounty,
+//   description: 'CropSummaryByCounty', // 为导出的任务提供描述
+//   folder: 'GEE_Folder', // 指定Google Drive中的文件夹名称
+//   fileNamePrefix: 'Crop_Summary_By_County', // 导出文件的前缀
+//   fileFormat: 'CSV', // 指定导出的文件格式
+//   selectors: ['GEOID', 'histogram'] // 替换为您要导出的属性名称
+// };
+
+// // 调用导出函数
+// Export.table.toDrive(exportParams);
+
+
+// clip the NDVI layer according to soybean area
+var NDVIdataset = ee.ImageCollection('MODIS/061/MOD13Q1')
+                  .filter(ee.Filter.date('2017-06-01', '2017-10-01'));
+var ndvi = NDVIdataset.select('NDVI');
+
+var averNDVI = ndvi.mean();
+var soyNDVI = averNDVI.updateMask(maskedSoybeans);
+Map.addLayer(soyNDVI,{}, 'Soybean NDVI');
+
+var NDVIsoyMean = soyNDVI.reduceRegions({
+  collection: nd,
+  reducer: ee.Reducer.mean(), // 这个Reducer会计算soybean的NDVI平均值
+  scale: 30, 
+  tileScale: 4,// 设置适当的scale，这取决于数据的分辨率
+});
+
+print(NDVIsoyMean);
+
+// 定义导出的参数
+var NDVIexportParams = {
+  collection: NDVIsoyMean,
+  description: 2017 + 'county_soybean_ndvi_mean', // 为导出的任务提供描述
+  folder: 'GEE_Folder', // 指定Google Drive中的文件夹名称
+  fileNamePrefix: 2017 + 'NDVI_Summary_By_County', // 导出文件的前缀
+  fileFormat: 'CSV', // 指定导出的文件格式
+  selectors: ['NAME','GEOID', 'mean'] // 替换为您要导出的属性名称
+};
+
+// 调用导出函数
+Export.table.toDrive(NDVIexportParams);
+```

@@ -1,0 +1,453 @@
+---
+title: "interface"
+format: html
+editor: visual
+---
+
+```{// ——————————————————————————define crop layers—————————————————————}
+
+var cropLayers = {
+  Corn: {
+    // Add layers of corn
+    '2018': ee.Image("projects/ee-songzimeng/assets/corn2018"),
+    '2019': ee.Image("projects/ee-songzimeng/assets/corn2019"),
+    '2020': ee.Image("projects/ee-songzimeng/assets/corn2020"),
+    '2021': ee.Image("projects/ee-songzimeng/assets/corn2021"),
+    '2022': ee.Image("projects/ee-songzimeng/assets/corn2022"),
+    '2023': ee.Image("projects/ee-songzimeng/assets/corn2023"),
+    '2024': ee.Image("projects/ee-songzimeng/assets/corn2024")
+    
+  },
+  
+  Soybean: {
+    // Add layers of soybean
+
+    '2018': ee.Image("projects/ee-songzimeng/assets/soybean2018"),
+    '2019': ee.Image("projects/ee-songzimeng/assets/soybean2019"),
+    '2020': ee.Image("projects/ee-songzimeng/assets/soybean2020"),
+    '2021': ee.Image("projects/ee-songzimeng/assets/soybean2021"),
+    '2022': ee.Image("projects/ee-songzimeng/assets/soybean2022"),
+    '2023': ee.Image("projects/ee-songzimeng/assets/soybean2023"),
+    '2024': ee.Image("projects/ee-songzimeng/assets/soybean2024")
+  },
+  
+  Wheat: {
+    // Add layers of wheat
+
+    '2018': ee.Image("projects/ee-songzimeng/assets/wheat2018"),
+    '2019': ee.Image("projects/ee-songzimeng/assets/wheat2019"),
+    '2020': ee.Image("projects/ee-songzimeng/assets/wheat2020"),
+    '2021': ee.Image("projects/ee-songzimeng/assets/wheat2021"),
+    '2022': ee.Image("projects/ee-songzimeng/assets/wheat2022"),
+    '2023': ee.Image("projects/ee-songzimeng/assets/wheat2023"),
+    '2024': ee.Image("projects/ee-songzimeng/assets/wheat2024")
+  }
+};
+
+// -------------------------- Data  ------------------------------
+Map.setCenter(-100.55, 47.5, 7);
+Map.setOptions('SATELLITE');
+
+// clip the north dakota
+var counties = ee.FeatureCollection('TIGER/2016/Counties');
+var nd = counties.filter(ee.Filter.eq('STATEFP', '38'));
+
+// Formatted county name function
+var nd = nd.map(function(feature) {
+  var name = ee.String(feature.get('NAME')).toUpperCase().replace(' ', '', 'g');
+  return feature.set('NAME', name);
+});
+
+// Show the county boundary
+var ndCounties = ee.Image().byte().paint({
+  featureCollection: nd,
+  color: null, 
+  width: 1
+});
+
+// Add the counties layer
+Map.addLayer(ndCounties, {}, 'ND Counties');
+
+/// ——————————————Function and global variables——————————————————————————
+// Function to read csv
+function readCsvFile(selectedYear, selectedCrop) {
+  var fileName = selectedYear +'_'+ selectedCrop;
+  var csvFile = ee.FeatureCollection('projects/ee-songzimeng/assets/' + fileName); 
+
+  return csvFile;
+}
+
+// Function to fomat county name
+function processCountyColumn(table) {
+  var countyColumnName = 'County';
+  function processCountyName(countyName) {
+    return ee.String(countyName).toUpperCase().replace('\\s+', '');
+  }
+  
+  var processedCountyColumn = table.map(function(feature) {
+    var countyName = feature.get(countyColumnName);
+    var processedCountyName = processCountyName(countyName);
+    return feature.set(countyColumnName, processedCountyName);
+  });
+  
+  // return FeatureCollection
+  return processedCountyColumn;
+}
+
+var selectedCrop='Select...';
+var selectedYear='Select...';
+var soybeanPrice = 11.90; // 2024 average
+var CornPrice = 41.68; // 2024 average
+var wheatPrice = 6.07; // 2024 average
+var cropPrice = 0; //
+
+var crops = {
+  'Corn': 1,
+  'Wheat': 23,
+  'Soybean': 5
+};
+
+
+// ————————————————interface——————————————————————————
+// set default year
+var defaultYear = '2018';
+
+var cropYieldLayer = null;
+
+var statsLabel_1 = ui.Label('Click on County to see info:');
+var statsLabel_2 = ui.Label('Select an area to see info:');
+
+// set original info status
+statsLabel_1.style().set('shown', true);
+statsLabel_2.style().set('shown', false);
+
+// Clear button to remove all selected layers
+var drawingTools = Map.drawingTools();
+var clearButton = ui.Button({
+  label: 'Clear Selected Area',
+  onClick: function() {
+
+    var layers = drawingTools.layers();
+
+    layers.forEach(function(layer) {
+      drawingTools.layers().remove(layer);
+    });
+
+    resultsPanel.clear();
+  },
+  style: {margin: '10px'}
+});
+
+
+// the main panel to select mode, year, croptype
+var panel = ui.Panel({
+  widgets: [
+    
+    ui.Label('North Dakota Crop Yield', {
+      fontWeight: 'bold',
+      fontSize: '22px',
+      textAlign: 'center',
+      stretch: 'horizontal'
+      
+    }),
+    
+    ui.Label('Select Mode:'),
+    ui.Select({
+      items: ['Select...','County Level', 'Area Level'],
+      value: 'Select...',
+      onChange: function(mode) {
+        
+        // operate different 
+        if (mode === 'County Level') {
+          // County Level
+          statsLabel_1.style().set('shown', true);
+          statsLabel_2.style().set('shown', false);
+          
+          // reset button
+          panel.remove(clearButton);
+          panel.add(clearButton);
+          
+          // ban polygon drawing selection
+          var drawingTools = Map.drawingTools();
+          drawingTools.setShown(false);
+          
+          //Function for getting value from image
+          var getCalculation = function(countyName, cropYieldLayer) {
+            var county = nd.filter(ee.Filter.eq('NAME', countyName)).first();
+            var countyGeometry = county.geometry();
+            
+             //print(selectedYear, selectedCrop);
+            var countyData=readCsvFile(selectedYear, selectedCrop);
+            // print(countyData);
+            countyData = processCountyColumn(countyData);
+            
+            resultsPanel.clear();
+          
+            var countStats = cropYieldLayer.reduceRegion({
+              reducer: ee.Reducer.count(),
+              geometry: countyGeometry,
+              scale: 30,
+              maxPixels: 1e9
+            });
+           //print(countStats);
+          
+            var selectedCounty = countyData.filter(ee.Filter.eq('County', countyName));
+            var averYield = selectedCounty.reduceColumns({
+            reducer: ee.Reducer.mean(),
+            selectors: ['Value']
+          });
+            //print(averYield);
+          
+            // create labels
+            var countyLabel = ui.Label({
+              value: 'County: ' + countyName,
+              style: {fontSize: '13px', padding: '0px 50px'}
+            });
+          
+            var count_sumLabel = ui.Label({
+              value: 'Calculating...',
+              style: {fontSize: '13px', padding: '0px 50px'}
+            });
+          
+          // update labels by calculating
+          // get the mean yield data
+            averYield.evaluate(function(result) {
+              var meanYield = result.mean;
+              var count_averYieldLabel = ui.Label({
+                value: 'Average Yield: ' + meanYield.toFixed(2) + ' BU/Acre', 
+                style: {fontSize: '13px', padding: '0px 50px'}
+              });
+                resultsPanel.add(count_averYieldLabel);
+          });
+          
+            // calculate the area and total yield
+            countStats.get('YIELDpredicted').evaluate(function(value){
+
+              var areaInSqKm = (value / 1e6) * 900;
+              var areaInAcres = areaInSqKm * 247.105;
+              count_sumLabel.setValue('Crop Area: ' + areaInSqKm.toFixed(2) + 
+                                      ' km² (' + areaInAcres.toFixed(2) + ' Acres)');
+                                      
+              averYield.evaluate(function(result) {
+                var meanYield = result.mean;
+                var totalYield = areaInAcres * meanYield;
+                var count_totalYieldLabel = ui.Label({
+                  value: 'Total Yield: ' + totalYield.toFixed(2) + ' BU', 
+                  style: {fontSize: '13px', padding: '0px 50px'}
+                });
+                var yieldPrice = totalYield * cropPrice;
+                var yieldPriceLabel = ui.Label({
+                  value: 'Total Yield Value: ' + yieldPrice.toFixed(2) + ' $', 
+                  style: {fontSize: '13px', padding: '0px 50px'}
+                });
+                resultsPanel.add(count_totalYieldLabel);
+                resultsPanel.add(yieldPriceLabel);
+          });
+            });
+          
+            // add the new label to sub-panel
+            resultsPanel.add(countyLabel);
+            resultsPanel.add(count_sumLabel);
+          };
+          
+          Map.unlisten()
+          
+            // create onclick function
+          Map.onClick(function(coords) {
+            
+          var point = ee.Geometry.Point(coords.lon, coords.lat);
+          var county = ee.Feature(nd.filterBounds(point).first());
+          var countyName = county.get('NAME');
+          countyName.evaluate(function(name) {
+            getCalculation(name, cropYieldLayer);
+          });
+          })
+          
+
+          // Area level
+        } else if (mode === 'Area Level') {
+
+          statsLabel_1.style().set('shown', false);
+          statsLabel_2.style().set('shown', true);
+          
+          // delet onclick monitor
+          Map.unlisten()
+          
+          //reset button
+          panel.remove(clearButton);
+          panel.add(clearButton);
+          
+          // draw polygon
+          var drawingTools = Map.drawingTools();
+          drawingTools.setShown(true);
+    
+    
+          // function under area level
+          function initializeAreaLevelMode() {
+            // create a new drawing tools
+            var drawingTools = Map.drawingTools();
+            drawingTools.setShown(true);
+            
+            drawingTools.onDraw(function(geometry) {
+              // get the polygon user drawing
+              var userPolygon = geometry;
+              
+              // calculate pixels number inside the polygon user draw
+              var pixelCount = cropYieldLayer.reduceRegion({
+                reducer: ee.Reducer.count(),
+                geometry: userPolygon,
+                scale: 30,
+                maxPixels: 1e9
+              });
+              
+              //calculate average yield user draw
+             var meanStats = cropYieldLayer.reduceRegion({
+              reducer: ee.Reducer.mean(),
+              geometry: userPolygon,
+              scale: 30,
+              maxPixels: 1e9
+            });
+              // print(meanStats)
+
+                // combined 2 results
+              var results = ee.Dictionary({
+                  meanYield: meanStats.get('YIELDpredicted'),
+                  pixelCount: pixelCount.get('YIELDpredicted')
+              });
+
+              // calculate average yield, crop area, total yield, and update labels
+              results.evaluate(function(values)  {
+                resultsPanel.clear();
+                
+              var area_sumLabel = ui.Label({
+                value: 'Calculating...',
+                style: {fontSize: '14px', padding: '0px 50px'}
+              });
+              
+              var meanYield_sumLabel = ui.Label({
+                value: 'Calculating...',
+                style:{fontSize: '14px', padding: '0px 50px'}
+              });
+              
+              var count_totalYieldLabel = ui.Label({
+                value: 'Calculating...',
+                style:{fontSize: '14px', padding: '0px 50px'}
+              });
+          
+              resultsPanel.add(area_sumLabel);
+              resultsPanel.add(meanYield_sumLabel);
+              resultsPanel.add(count_totalYieldLabel);
+          
+              meanYield_sumLabel.setValue('Average Yield: ' + values.meanYield.toFixed(2) + ' BU/Acre');
+          
+              var areaInSqKm = (values.pixelCount / 1e6) * 900;
+              var areaInAcres = areaInSqKm * 247.105;
+              area_sumLabel.setValue('Crop Area: ' + areaInSqKm.toFixed(2) + 
+                                      ' km² (' + areaInAcres.toFixed(2) + ' Acres)');
+                                      
+              var totalYield = areaInAcres * values.meanYield;
+              count_totalYieldLabel.setValue('Total Yield: ' + totalYield.toFixed(2) + ' BU'); 
+               
+              var yieldPrice = totalYield * cropPrice;
+              var yieldPriceLabel = ui.Label({
+                  value: 'Total Yield Value: ' + yieldPrice.toFixed(2) + ' $', 
+                  style: {fontSize: '13px', padding: '0px 50px'}
+                });
+              resultsPanel.add(yieldPriceLabel);
+                
+                });
+                
+            });
+
+          }
+          initializeAreaLevelMode();
+          
+        }
+        
+      }
+    }),
+    
+    ui.Label('Select Year:'),
+    ui.Select({
+      items: ['Select...', '2018', '2019', '2020', 
+                 '2021', '2022', '2023', '2024'],
+      value: 'Select...',
+      onChange: function(year) {
+        
+        // update global variable selectedYear, the year user chose
+        selectedYear = year;
+        updateMap();
+
+      }
+    }),
+    
+    ui.Label('Select Crop:'),
+    ui.Select({
+      items: ['Select...', 'Soybean', 'Corn', 'Wheat'],
+      value: 'Select...',
+      onChange: function(crop) {
+        
+        selectedCrop = crop;
+        
+        // set cropPrice according to selected 
+        if (selectedCrop === 'Soybean') {
+          cropPrice = 11.90; 
+        } else if (selectedCrop === 'Wheat') {
+          cropPrice = 6.07; 
+        } else if (selectedCrop === 'Corn') {
+          cropPrice = 5.80; 
+        } else {
+          cropPrice = 0;
+        }
+        
+        updateMap();
+        
+      }
+    }),
+    
+    statsLabel_1,
+    statsLabel_2
+  ],
+  style: {position: 'top-right'}
+});
+
+Map.add(panel);
+
+// Add a sub-panel to show calculation info
+var resultsPanel = ui.Panel({
+  layout: ui.Panel.Layout.Flow('vertical'),
+  style: {width: '310px'} 
+});
+panel.add(resultsPanel);
+
+// update new layers accoording to user's selection
+function updateMap() {
+
+  // // Remove particular layers
+  // Map.layers().forEach(function(layer) {
+  //   var layerName = layer.getName();
+  //   if (layerName.indexOf('YIELD_') === 0) {
+  //     Map.remove(layer);
+  //   }
+  // });
+  
+  Map.layers().reset();
+
+  // Show layers if user choose both selections
+  if (selectedYear !== 'Select...' && selectedCrop !== 'Select...') {
+    
+      cropYieldLayer = cropLayers[selectedCrop][selectedYear];
+
+    if (cropYieldLayer) {
+      var layerName = selectedCrop + '_' + selectedYear;
+      Map.addLayer(cropYieldLayer, {}, 'YIELD_' + layerName);
+    }
+
+  }
+  
+  // add the counties layer
+  Map.addLayer(ndCounties, {}, 'ND Counties');
+  
+}
+
+```
